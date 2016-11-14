@@ -58,6 +58,7 @@ pub enum ApiMsg {
     RequestWebGLContext(Size2D<i32>, GLContextAttributes, IpcSender<Result<(WebGLContextId, GLLimits), String>>),
     ResizeWebGLContext(WebGLContextId, Size2D<i32>),
     WebGLCommand(WebGLContextId, WebGLCommand),
+    VRCompositorCommand(WebGLContextId, VRCompositorCommand)
 }
 
 #[derive(Copy, Clone, Deserialize, Serialize, Debug)]
@@ -604,7 +605,15 @@ pub enum WebGLCommand {
     DrawingBufferHeight(IpcSender<i32>),
     Finish(IpcSender<()>),
     Flush,
-    GenerateMipmap(u32),
+    GenerateMipmap(u32)
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum VRCompositorCommand {
+    Create(VRCompositorId),
+    SyncPoses(VRCompositorId, IpcSender<Result<(),()>>),
+    SubmitFrame(VRCompositorId, [f32; 4], [f32; 4]),
+    Release(VRCompositorId)
 }
 
 #[cfg(feature = "nightly")]
@@ -743,4 +752,17 @@ pub enum WebGLShaderParameter {
     Int(i32),
     Bool(bool),
     Invalid,
+}
+
+pub type VRCompositorId = u32;
+
+// WebVR compositor traits that must be called in the WebGL render thread
+pub trait VRCompositor {
+    fn sync_poses(&self);
+    fn submit_frame(&self, u32, [f32; 4], [f32; 4]);
+}
+
+// a compositor for a hmd device_id
+pub trait VRCompositorCreator: Send {
+    fn create_compositor(&mut self, VRCompositorId) -> Option<Box<VRCompositor>>;
 }

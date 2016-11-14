@@ -443,6 +443,12 @@ pub struct TextureId {
     target: gl::GLuint,
 }
 
+impl TextureId {
+     pub fn get_name(&self) -> gl::GLuint {
+         self.name
+     }
+}
+
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct ProgramId(pub gl::GLuint);
 

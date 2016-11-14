@@ -12,6 +12,7 @@ use {FontKey, IdNamespace, ImageFormat, ImageKey, NativeFontHandle, PipelineId};
 use {RenderApiSender, ResourceId, ScrollEventPhase, ScrollLayerState};
 use {StackingContext, StackingContextId, WebGLContextId, WebGLCommand};
 use {GlyphKey, GlyphDimensions};
+use VRCompositorCommand;
 
 impl RenderApiSender {
     pub fn new(api_sender: IpcSender<ApiMsg>,
@@ -237,6 +238,11 @@ impl RenderApi {
 
     pub fn send_webgl_command(&self, context_id: WebGLContextId, command: WebGLCommand) {
         let msg = ApiMsg::WebGLCommand(context_id, command);
+        self.api_sender.send(msg).unwrap();
+    }
+
+    pub fn send_vr_compositor_command(&self, context_id: WebGLContextId, command: VRCompositorCommand) {
+        let msg = ApiMsg::VRCompositorCommand(context_id, command);
         self.api_sender.send(msg).unwrap();
     }
 

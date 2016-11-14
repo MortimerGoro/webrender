@@ -40,6 +40,7 @@ use time::precise_time_ns;
 use util::TransformedRectKind;
 use webrender_traits::{ColorF, Epoch, PipelineId, RenderNotifier, RenderDispatcher};
 use webrender_traits::{ImageFormat, RenderApiSender, RendererKind};
+use webrender_traits::VRCompositorCreator;
 
 pub const MAX_VERTEX_TEXTURE_WIDTH: usize = 1024;
 
@@ -373,6 +374,7 @@ pub struct Renderer {
     /// Used to dispatch functions to the main thread's event loop.
     /// Required to allow GLContext sharing in some implementations like WGL.
     main_thread_dispatcher: Arc<Mutex<Option<Box<RenderDispatcher>>>>,
+    vr_compositor_creator: Arc<Mutex<Option<Box<VRCompositorCreator>>>>
 }
 
 impl Renderer {
@@ -617,6 +619,9 @@ impl Renderer {
         let backend_notifier = notifier.clone();
         let backend_main_thread_dispatcher = main_thread_dispatcher.clone();
 
+        let vr_compositor = Arc::new(Mutex::new(None));
+        let backend_vr_compositor = vr_compositor.clone();
+
         // We need a reference to the webrender context from the render backend in order to share
         // texture ids
         let context_handle = match options.renderer_kind {
@@ -645,7 +650,8 @@ impl Renderer {
                                                  config,
                                                  debug,
                                                  enable_recording,
-                                                 backend_main_thread_dispatcher);
+                                                 backend_main_thread_dispatcher,
+                                                 backend_vr_compositor);
             backend.run();
         });
 
@@ -698,6 +704,7 @@ impl Renderer {
             data128_texture: data128_texture,
             pipeline_epoch_map: HashMap::with_hasher(Default::default()),
             main_thread_dispatcher: main_thread_dispatcher,
+            vr_compositor_creator: vr_compositor
         };
 
         let sender = RenderApiSender::new(api_tx, payload_tx);
@@ -719,6 +726,14 @@ impl Renderer {
     pub fn set_main_thread_dispatcher(&self, dispatcher: Box<RenderDispatcher>) {
         let mut dispatcher_arc = self.main_thread_dispatcher.lock().unwrap();
         *dispatcher_arc = Some(dispatcher);
+    }
+
+    /// Sets the VRCompositorCreator.
+    ///
+    /// TODO: add description
+    pub fn set_vr_compositor_creator(&self, creator: Box<VRCompositorCreator>) {
+        let mut creator_arc = self.vr_compositor_creator.lock().unwrap();
+        *creator_arc = Some(creator);
     }
 
     /// Returns the Epoch of the current frame in a pipeline.
