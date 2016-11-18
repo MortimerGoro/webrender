@@ -611,7 +611,7 @@ pub enum WebGLCommand {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum VRCompositorCommand {
     Create(VRCompositorId),
-    SyncPoses(VRCompositorId, IpcSender<Result<(),()>>),
+    SyncPoses(VRCompositorId, f64, f64, IpcSender<Result<Vec<u8>,()>>),
     SubmitFrame(VRCompositorId, [f32; 4], [f32; 4]),
     Release(VRCompositorId)
 }
@@ -754,11 +754,11 @@ pub enum WebGLShaderParameter {
     Invalid,
 }
 
-pub type VRCompositorId = u32;
+pub type VRCompositorId = u64;
 
 // WebVR compositor traits that must be called in the WebGL render thread
 pub trait VRCompositor {
-    fn sync_poses(&self);
+    fn sync_poses(&self, f64, f64) -> Vec<u8>;
     fn submit_frame(&self, u32, [f32; 4], [f32; 4]);
 }
 

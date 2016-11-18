@@ -476,12 +476,12 @@ impl RenderBackend {
                     self.vr_compositors.insert(compositor_id, compositor);
                 }
             }
-            VRCompositorCommand::SyncPoses(compositor_id, sender) => {
+            VRCompositorCommand::SyncPoses(compositor_id, near, far, sender) => {
                 if let Some(ref compositor) = self.vr_compositors.get(&compositor_id) {
-                    compositor.sync_poses();
-                    sender.send(Ok(())).unwrap();
+                    let pose = compositor.sync_poses(near, far);
+                    let _result = sender.send(Ok(pose));
                 } else {
-                    sender.send(Err(())).unwrap();
+                    let _result = sender.send(Err(()));
                 }
             }
             VRCompositorCommand::SubmitFrame(compositor_id, left_bounds, right_bounds) => {
